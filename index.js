@@ -10,6 +10,13 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.json());
 app.use(cors());
 
+const connection = mysql.createConnection({
+	host: process.env.DB_HOST,
+	password: process.env.DB_PASSWORD,
+	user: process.env.DB_USER,
+	database: process.env.DB_DATABASE,
+});
+
 // CLOUDINARY
 
 const cloudinary = require('cloudinary').v2;
@@ -19,23 +26,28 @@ cloudinary.config({
 
 console.log(cloudinary.config());
 
+// Uploads image to cloudinary then sends the public_id to MySQL database
 app.post('/uploadToCloudinary', async (req, res) => {
 	const { photo } = req.body;
-	res.send('Image received');
+	// Uploads the base64 image to cloudinary
 	try {
 		const result = await cloudinary.uploader.upload(photo);
+		const public_id = result.public_id;
 
-		console.log(result);
+		// Saves public_id to MySQL database
+		const query = 'INSERT INTO photos (public_id) VALUES (?)';
+		connection.query(query, public_id, (error) => {
+			if (error) {
+				console.error('Error saving public_id to database:', error);
+				res.status(500).json({ error: 'Failed to save public_id to database' });
+				return;
+			}
+			console.log('Public ID saved to database:', public_id);
+			res.status(200).json({ public_id });
+		});
 	} catch (error) {
 		console.log(error);
 	}
-});
-
-const connection = mysql.createConnection({
-	host: process.env.DB_HOST,
-	password: process.env.DB_PASSWORD,
-	user: process.env.DB_USER,
-	database: process.env.DB_DATABASE,
 });
 
 app.get('/', (req, res) => {
