@@ -38,8 +38,8 @@ app.post('/uploadToCloudinary', async (req, res) => {
 		const query = 'INSERT INTO photos (public_id) VALUES (?)';
 		connection.query(query, public_id, (error) => {
 			if (error) {
-				console.error('Error saving public_id to database:', error);
-				res.status(500).json({ error: 'Failed to save public_id to database' });
+				console.error('Error saving public id to database:', error);
+				res.status(500).json({ error: 'Failed to save public id to database' });
 				return;
 			}
 			console.log('Public ID saved to database:', public_id);
@@ -48,6 +48,21 @@ app.post('/uploadToCloudinary', async (req, res) => {
 	} catch (error) {
 		console.log(error);
 	}
+});
+
+app.get('/getPublicIds', (req, res) => {
+	const query = 'SELECT * FROM photos';
+	connection.query(query, (error, results) => {
+		if (error) {
+			console.error('Error fetching public ids from database: ', error);
+			res.status(500).json({
+				error: 'Failed to fetch public ids',
+			});
+		} else {
+			const publicIds = results.map((result) => result.public_id);
+			res.status(200).json({ publicIds });
+		}
+	});
 });
 
 app.get('/', (req, res) => {
